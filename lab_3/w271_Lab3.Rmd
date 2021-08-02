@@ -57,6 +57,77 @@ Specifically, this data set contains data for the 48 continental U.S. states fro
 
 1. (30%) Load the data. Provide a description of the basic structure of the dataset, as we have done throughout the semester. Conduct a very thorough EDA, which should include both graphical and tabular techniques, on the dataset, including both the dependent variable *totfatrte* and the potential explanatory variables. You need to write a detailed narrative of your observations of your EDA. *Reminder: giving an "output dump" (i.e. providing a bunch of graphs and tables without description and hoping your audience will interpret them) will receive a zero in this exercise.*
 
+**Response:**
+
+```{r}
+library(plm)
+library(funModeling) 
+library(tidyverse) 
+library(Hmisc)
+library(ggplot2)
+library(ggthemes)
+library(forecast)
+library(tseries)
+
+```
+
+
+```{r}
+#load("driving.RData")
+
+load("driving.RData", ex <- new.env())
+ls.str(ex) 
+
+head(data)
+
+df <- pdata.frame(data, index=c("state", 'year'))
+head(df, 20)
+```
+
+
+```{r}
+cor(data)
+
+sum(is.na(data))
+
+summary(data)
+
+```
+
+```{r}
+data1 <- subset(data, state == 1) 
+data2 <- subset(data, state == 2)
+data3 <- subset(data, state == 3)
+data4 <- subset(data, state == 4) 
+data5 <- subset(data, state == 5)
+data6 <- subset(data, state == 6) 
+data7 <- subset(data, state == 7) 
+data8 <- subset(data, state == 8)
+data9 <- subset(data, state == 9)
+data10 <- subset(data, state == 10) 
+data11 <- subset(data, state == 11)
+data12 <- subset(data, state == 12)
+
+#plot the first data series using plot()
+plot(data1$year, data1$totfatrte, type="o", col="blue", pch="o", ylab="y", lty=1)
+
+#add second data series to the same chart using points() and lines()
+points(data2$year, data2$totfatrte, col="red", pch="*")
+lines(data2$year, data2$totfatrte, col="red",lty=2)
+
+#add third data series to the same chart using points() and lines()
+points(data3$year, data3$totfatrte, col="dark red",pch="+")
+lines(data3$year, data3$totfatrte, col="dark red", lty=3)
+```
+```{r}
+
+```
+
+
+
+
+
+
 2. (15%) How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
 
 3. (15%) Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
