@@ -58,6 +58,14 @@ Specifically, this data set contains data for the 48 continental U.S. states fro
 1. (30%) Load the data. Provide a description of the basic structure of the dataset, as we have done throughout the semester. Conduct a very thorough EDA, which should include both graphical and tabular techniques, on the dataset, including both the dependent variable *totfatrte* and the potential explanatory variables. You need to write a detailed narrative of your observations of your EDA. *Reminder: giving an "output dump" (i.e. providing a bunch of graphs and tables without description and hoping your audience will interpret them) will receive a zero in this exercise.*
 
 **Response:**
+The EDA below displays many different graphs and tables of the data. The first table if the correlation plot of all the variables. The dependent variable of interest is the totfatrte, which is the total fatality rate of driving incidents. From the correlation plot, the variables that seem to best correlate with this variable are, the year, seatbelt, minage, gdl, zerotol, vehiclemiles. All these variables are negatively correlated with the dependent variable. There are some variables that are strongly correlated with the dependent variable in a positive way and these include unem, perc14_24, and vehicmilespc. Since some of the speedlimit correlated go from being positive and negative, it seems that the data is inconclusive here on how changing the speed limit may affect driving incidents. Also, it is important to note that all the other measurements of fatality are highly correlated with the dependent variable, however these variables are not independent of one another and are essentially part of the same thing, therefore we will not use them in the model. 
+
+It is also important to note that there is no missing data from the data, and the data goes from 1980 through 2004 and includes 48 different states. The data is set up to have all the data in the time frame of 1980 to 2004 for each state, therefore we can see the changes over time for each individual state and model all the changes together in one model. Only the variables from the data that were discussed above for having a strong correlation to the dependent variable will be analyzed from here on out. 
+
+Since the year was negatively correlated I was interested to model the change in totfatrte over time. All the states were modeled on plots, however for sake of conducting a concise analysis only one plot of 12 different states is shown below. This plot shows the different states over time. We are not necessarily interested on how an individual model's data looks, but rather the overall change, and overall the data looks like it does slightly decrease over the 25 year span. The other data plots that are not shown showed similar plots. 
+
+Lastly, the histograms of all the variable in consideration for the model are shown below. It is difficult to assess what some of the histograms mean, since we do not have information on what some of these variable acronyms mean. However, the point of plotting the histograms of these variables is to see any extreme distribution in the data. Most of the data is generally normal, mainly a lot of the data has right sided tails which may lead to a transformation of that variable in order to obtain a more normal distribution, however these transformations will be discussed in the model formulation part of the lab. 
+
 
 ```{r}
 library(plm)
@@ -65,15 +73,15 @@ library(funModeling)
 library(tidyverse) 
 library(Hmisc)
 library(ggplot2)
-library(ggthemes)
 library(forecast)
 library(tseries)
+library(corrr)
+
 
 ```
 
 
 ```{r}
-#load("driving.RData")
 
 load("driving.RData", ex <- new.env())
 ls.str(ex) 
@@ -86,7 +94,7 @@ head(df, 20)
 
 
 ```{r}
-cor(data)
+correlate(data)
 
 sum(is.na(data))
 
@@ -109,23 +117,58 @@ data11 <- subset(data, state == 11)
 data12 <- subset(data, state == 12)
 
 #plot the first data series using plot()
-plot(data1$year, data1$totfatrte, type="o", col="blue", pch="o", ylab="y", lty=1)
-
-#add second data series to the same chart using points() and lines()
-points(data2$year, data2$totfatrte, col="red", pch="*")
-lines(data2$year, data2$totfatrte, col="red",lty=2)
+plot(data1$year, data1$totfatrte, type="o", col="blue", pch="o", ylab="y", lty=1, ylim=c(0,50), xlim=c(1979,2005))
 
 #add third data series to the same chart using points() and lines()
 points(data3$year, data3$totfatrte, col="dark red",pch="+")
 lines(data3$year, data3$totfatrte, col="dark red", lty=3)
+
+points(data4$year, data4$totfatrte, col="red", pch="*")
+lines(data4$year, data4$totfatrte, col="red",lty=2)
+
+points(data5$year, data5$totfatrte, col="purple", pch="-")
+lines(data5$year, data5$totfatrte, col="purple",lty=1)
+
+points(data6$year, data6$totfatrte, col="orange", pch="-")
+lines(data6$year, data6$totfatrte, col="orange",lty=4)
+
+points(data7$year, data7$totfatrte, col="pink", pch="-")
+lines(data7$year, data7$totfatrte, col="pink",lty=2)
+
+points(data8$year, data8$totfatrte, col="green", pch="-")
+lines(data8$year, data8$totfatrte, col="green",lty=4)
+
+points(data9$year, data9$totfatrte, col="dark blue", pch="-")
+lines(data9$year, data9$totfatrte, col="dark blue",lty=4)
+
+points(data10$year, data10$totfatrte, col="dark green", pch="~")
+lines(data10$year, data10$totfatrte, col="dark green",lty=4)
+
+points(data11$year, data11$totfatrte, col="hot pink", pch="#")
+lines(data11$year, data11$totfatrte, col="hot pink",lty=4)
+
+points(data12$year, data12$totfatrte, col="sea green", pch="+")
+lines(data12$year, data12$totfatrte, col="sea green",lty=4)
 ```
 ```{r}
+hist(data$totfatrte)
 
+hist(data$seatbelt)
+
+hist(data$minage)
+
+hist(data$gdl)
+
+hist(data$zerotol)
+
+hist(data$vehicmiles)
+
+hist(data$unem)
+
+hist(data$perc14_24)
+
+hist(data$vehicmilespc)
 ```
-
-
-
-
 
 
 2. (15%) How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
