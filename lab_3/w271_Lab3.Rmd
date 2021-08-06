@@ -177,9 +177,80 @@ hist(data$vehicmilespc)
 
 4. (15%) Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
 
+```{R Q4}
+head(data)
+
+# Transform the data (as per inputs from Dominik)
+data$bac08bin = ifelse(data$bac08<=0.5,0,1)
+data$bac10bin = ifelse(data$bac10<=0.5,0,1)
+data$persebin = ifelse(data$perse<=0.5,0,1)
+data$sbprimbin = ifelse(data$sbprim<=0.5,0,1)
+data$sbseconbin = ifelse(data$sbsecon<=0.5,0,1)
+data$sl70plusbin = ifelse(data$sl70plus<=0.5,0,1)
+data$gdlbin = ifelse(data$gdl<0.5,0,1)
+data$unemlog = log(data$unem)
+
+#Fixed Effects Model
+model.fe = plm(totfatrte~bac08bin+bac10bin+persebin+sbprimbin+sbseconbin+sl70plusbin+gdlbin+
+                      perc14_24+unemlog+vehicmilespc + d81+d82+d83+d84+d85+d86+d87+d88+d89+
+                      d90+d91+d92+d93+d94+d95+d96+d97+d98+d99+d00+d01+d02+d03+d04, 
+               data=data, model=c("within"), index=c('state','year'), effect = "twoways")
+summary(model.fe)
+```
+***How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? ***
+
+> ################### Answer to be provided based on model built by Dominik in Q3
+
+***Which set of estimates do you think is more reliable? ***
+
+> 1. The FE model models the variation over time in $totfatrte$ and all the independent variables  *within* each state
+
+> 2. ################Points to be added based on model added in Q3
+
+
+***What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?***
+
+> ***FE Assumption*** - The fixed effect assumption is that the individual-specific effects are correlated with the independent variables.
+
+> ***Pooled OLS assumption*** - The Key assumption of Pooled OLS is that there are unique, time constant attributes of individuals that are not correlated with the individual regressors. 
+
+> In the current context, it is very difficult to test assumption for Poole OLS model. In other words, FE model assumptions are more reasonable to proceed.
+
+
 5. (10%) Would you perfer to use a random effects model instead of the fixed effects model you built in *Exercise 4*? Please explain.
 
+```{R Q5}
+model.re = plm(totfatrte~bac08bin+bac10bin+persebin+sbprimbin+sbseconbin+sl70plusbin+gdlbin+
+                      perc14_24+unemlog+vehicmilespc + d81+d82+d83+d84+d85+d86+d87+d88+d89+
+                      d90+d91+d92+d93+d94+d95+d96+d97+d98+d99+d00+d01+d02+d03+d04, 
+               data=data, model=c("random"), index=c('state','year'))
+
+summary(model.re)
+```
+
+***Answer Q5***
+
+> 1. In a random effects model, the unobserved variables are assumed to be uncorrelated with (or, more strongly, statistically independent of) all the observed variables.
+
+> 2. In a fixed effects model, the unobserved variables are allowed to have any associations whatsoever with the observed variables.
+
+> 3. For the given data, assumption for fixed effect model seems to be more practical as it is very difficult to test/prove that unobserved variables are not correlated with observed variables if we use random effect modeling. On other hand, it is possible to remove omitted/unobserved variable bias using fixed effects modeling with dummy variables of each year to explain the unaccounted for time-variant error dependence.
+
+> 4. Hence, fixed effect model is prferred over random effect model.
+
 6. (10%) Suppose that *vehicmilespc*, the number of miles driven per capita, increases by $1,000$. Using the FE estimates, what is the estimated effect on *totfatrte*? Please interpret the estimate.
+
+***Answer Q6***
+
+> 1. From the FE model, the coefficient for the $vehicmilespc$ variable is 0.00094479
+
+> 2. $totfatrte$ is Fatalities/100K people per mile-driven/capita.  
+
+> 3. If $vehicmilespc$ increases by $1,000$, the value of $totfatrte$ increases as follows
+
+$$ Increase-In-totfatrte-value = 1000 * 0.00094479 =  0.94479 $$
+> 4. In summary, estimated effect on *totfatrte* *vehicmilespc*, if the number of miles driven per capita, increases by $1,000$, is an increase in it's value by $0.94479$ (provided all other things do not change)
+
 
 7. (5%) If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors?
 
