@@ -88,12 +88,13 @@ ls.str(ex)
 
 head(data)
 
-df <- pdata.frame(data, index=c("state", 'year'))
-head(df, 20)
+#df <- pdata.frame(data, index=c("state", 'year'))
+#head(df, 20)
 ```
 
 
 ```{r}
+
 correlate(data)
 
 sum(is.na(data))
@@ -173,7 +174,55 @@ hist(data$vehicmilespc)
 
 2. (15%) How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
 
+```{R Q2}
+boxplot(totfatrte ~ year, data=data)
+data_sub = data[, c('totfatrte', 'year')]
+for (year in unique(data_sub$year)) {
+  if (year == min(data_sub$year)) {
+    next
+  }
+  data_sub[paste('year_', year, sep='')] = (data_sub$year == year) * 1
+}
+data_sub$year = NULL
+mdl1 = lm('totfatrte ~ .', data=data_sub)
+summary(mdl1)
+year_avg = as.numeric(mdl1$coefficients)
+year_avg[2:length(year_avg)] = year_avg[2:length(year_avg)] + year_avg[1]
+plot(unique(data$year), year_avg, main='Total fatalities per 100,000 population through time', xlab='Year', ylab='fatality per 100,000 population')
+```
+
+**Response**
+
+The average fatalities per 100,000 people (totfatrte) for each year can be computed through the regression, where the fatalities are regressed on year dummy variables, and by skipping the first year since the intercept of the regression will represent the average for 1980, and all further coefficients will represent the adjustment to the intercept term to arrive at the average for that given year. Looking at the chart, we can see that the average fatalaties per 100,000 people have been trending down overall, with a big improvements in the early and late 1980's, as well as early 1990's, with only a minor improvement from then until 2004.
+
+
 3. (15%) Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
+
+```{R Q3}
+vars = c('bac08', 'bac10', 'perse', 'sbprim', 'sbsecon', 'sl70plus', 'gdl', 'perc14_24', 'unem', 'vehicmilespc')
+for (var in vars) {
+  data_sub[var] = data[var]
+  hist(data_sub[var])
+}
+data_sub$unem = log(data_sub$unem)
+for (i in 1:7) {
+  data_sub[vars[i]] = (data_sub[vars[i]] > 0.5) * 1
+}
+mdl2 = lm('totfatrte ~ .', data=data_sub)
+summary(mdl2)
+anova(mdl1, mdl2, test="Chisq")
+```
+
+**Response**
+
+Since bac08, bac10, perse, sbprim, sbsecon, s170plus and gdl, are 0-1 variables that represent the fraction of a year that a specific speed limit / blood alcohol level / law was in place for (for a given year), these are transformed into 0-1 hot encodings (0 = 0.50 or less, 1 if > 0.50) for better interpretability. Furthermore, the unem variable, which is the unemployment rate, is log transformed to take out the skew of its distribution as mentioned in the EDA. The remaining variables (perc14_14 and vehicmilespc) are not transformed since their distributions are not skewed.
+
+After running the regression with the added variables, we can see from the anova (chi-square) test that the added variables are adding significant explanitory power to the model. bac08 and bac10 variables represent the blood alcohol level limits that are prescribed by law, and these two variables can either be 0 for both if there are no limits, 1 for one and 0 for the other, or a fractions that can sum to 1 if one limit was used for part of one year and the other was used for the remaining. The coefficients for these two variables in the regression are -2.288 and -1.256, which implies that total fatalities per 100,000 people decreases by these amounts when these limits are in place. Interestingly and not surprisingly, going from no limit to 0.08 limit reduces the fatalities more than going for 0.08 to 0.1. Both coefficients are significant at the 0.01 confidence level.
+
+Looking at per se laws (perse), the coefficient is negative as expected, and specifically, the model estimates that by introducing this per se law, total fatalities per 100,000 people is reduced by -0.5625. This variable is somewhat significant at the 0.1 level. Moving to the primary seat belt law, there is also an estimated negative effect with total fatalities per 100,000 people of -0.3795, however, this variable does not seem significant, and interestingly, the sbsecon (secondary seal belt law), is not significant either and has an even lower magnititude in estimated effect on totfatrte.
+
+
+
 
 4. (15%) Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
 
