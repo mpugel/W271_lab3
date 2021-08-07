@@ -88,8 +88,8 @@ ls.str(ex)
 
 head(data)
 
-#df <- pdata.frame(data, index=c("state", 'year'))
-#head(df, 20)
+df <- pdata.frame(data, index=c("state", 'year'))
+head(df, 20)
 ```
 
 
