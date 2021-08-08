@@ -258,13 +258,11 @@ summary(model.fe)
 
 ***How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? ***
 
-> ################### Answer to be provided based on model built by Dominik in Q3
+> The coefficients for bac08, bac10, perse and sbprim are all statistically significant with the panel fixed-effects model.  The estimate for the bac08 coeff is slightly lower, the coeff for bac10 is about the same as before. The perse coeff has changed  from -2.06 to -1.12;  Also the coeff for sbprim is now statistically significant which was not the case earlier.
 
 ***Which set of estimates do you think is more reliable? ***
 
-> 1. The FE model models the variation over time in $totfatrte$ and all the independent variables  *within* each state
-
-> 2. ################Points to be added based on model added in Q3
+> 1. The FE model models the variation over time in $totfatrte$ and all the independent variables  *within* each state. So it is more reliable
 
 
 ***What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?***
