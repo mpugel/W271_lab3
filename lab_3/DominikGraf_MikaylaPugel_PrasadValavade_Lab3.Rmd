@@ -1,0 +1,332 @@
+---
+title: 'Statistical Methods for Discrete Response, Time Series, and Panel Data (W271): Group Lab 3'
+subtitle: 'Due Sunday 8 August 2021 11:59pm'
+author: 'Dominik Graf, Mikayla Pugel, Prasad Valavade'
+geometry: margin=1in
+output:
+  pdf_document:
+    latex_engine: xelatex
+  number_sections: yes
+  html_document: default
+  toc: yes
+fontsize: 11pt
+---
+
+## Instructions (Please Read Carefully):
+
+* Submit by the due date. **Late submissions will not be accepted**
+
+* 20 page limit (strict)
+
+* Do not modify fontsize, margin or line-spacing settings
+
+* One student from each group should submit the lab to their student github repo by the deadline
+
+* Submit two files:
+    
+    1. A pdf file that details your answers. Include all R code used to produce the answers
+    
+    2. The R markdown (Rmd) file used to produce the pdf file
+  
+    The assignment will not be graded unless **both** files are submitted
+      
+* Name your files to include all group members' names. For example, if the students' names are Stan Cartman and Kenny Kyle, name your files as follows:
+
+    * `StanCartman_KennyKyle_Lab3.Rmd`
+    * `StanCartman_KennyKyle_Lab3.pdf`
+            
+* Although it sounds obvious, please write your name on page 1 of your pdf and Rmd files
+
+* All answers should include a detailed narrative; make sure that your audience can easily follow the logic of your analysis. All steps used in modelling must be clearly shown and explained; do not simply 'output dump' the results of code without explanation 
+
+* If you use libraries and functions for statistical modeling that we have not covered in this course, you must provide an explanation of why such libraries and functions are used and reference the library documentation
+
+* For mathematical formulae, type them in your R markdown file. Do not e.g. write them on a piece of paper, snap a photo, and use the image file
+
+* Incorrectly following submission instructions results in deduction of grades
+
+* Students are expected to act with regard to UC Berkeley Academic Integrity.
+
+
+\newpage
+
+# U.S. traffic fatalities: 1980-2004
+
+In this lab, you are asked to answer the question **"Do changes in traffic laws affect traffic fatalities?"**  To do so, you will conduct the tasks specified below using the data set *driving.Rdata*, which includes 25 years of data that cover changes in various state drunk driving, seat belt, and speed limit laws. 
+
+Specifically, this data set contains data for the 48 continental U.S. states from 1980 through 2004. Various driving laws are indicated in the data set, such as the alcohol level at which drivers are considered legally intoxicated. There are also indicators for “per se” laws—where licenses can be revoked without a trial—and seat belt laws. A few economic and demographic variables are also included. The description of the each of the variables in the dataset is come with the dataset.
+
+1. (30%) Load the data. Provide a description of the basic structure of the dataset, as we have done throughout the semester. Conduct a very thorough EDA, which should include both graphical and tabular techniques, on the dataset, including both the dependent variable *totfatrte* and the potential explanatory variables. You need to write a detailed narrative of your observations of your EDA. *Reminder: giving an "output dump" (i.e. providing a bunch of graphs and tables without description and hoping your audience will interpret them) will receive a zero in this exercise.*
+
+**Response to Q1:**
+The EDA below displays many different graphs and tables of the data. The first table if the correlation plot of all the variables. The dependent variable of interest is the totfatrte, which is the total fatality rate of driving incidents. From the correlation plot, the variables that seem to best correlate with this variable are, the year, seatbelt, minage, gdl, zerotol, vehiclemiles. All these variables are negatively correlated with the dependent variable. There are some variables that are strongly correlated with the dependent variable in a positive way and these include unem, perc14_24, and vehicmilespc. Since some of the speedlimit correlated go from being positive and negative, it seems that the data is inconclusive here on how changing the speed limit may affect driving incidents. Also, it is important to note that all the other measurements of fatality are highly correlated with the dependent variable, however these variables are not independent of one another and are essentially part of the same thing, therefore we will not use them in the model. 
+
+It is also important to note that there is no missing data from the data, and the data goes from 1980 through 2004 and includes 48 different states. The data is set up to have all the data in the time frame of 1980 to 2004 for each state, therefore we can see the changes over time for each individual state and model all the changes together in one model. Only the variables from the data that were discussed above for having a strong correlation to the dependent variable will be analyzed from here on out. 
+
+Since the year was negatively correlated I was interested to model the change in totfatrte over time. All the states were modeled on plots, however for sake of conducting a concise analysis only one plot of 12 different states is shown below. This plot shows the different states over time. We are not necessarily interested on how an individual model's data looks, but rather the overall change, and overall the data looks like it does slightly decrease over the 25 year span. The other data plots that are not shown showed similar plots. 
+
+Lastly, the histograms of all the variable in consideration for the model are shown below. It is difficult to assess what some of the histograms mean, since we do not have information on what some of these variable acronym's meaning. However, the point of plotting the histograms of these variables is to see any extreme distribution in the data. Most of the data is generally normal, mainly a lot of the data has right sided tails which may lead to a transformation of that variable in order to obtain a more normal distribution, however these transformations will be discussed in the model formulation part of the lab. 
+
+
+```{r results='hide',message = FALSE, warning=FALSE}
+library(plm)
+library(funModeling) 
+library(tidyverse) 
+library(Hmisc)
+library(ggplot2)
+library(forecast)
+library(tseries)
+library(corrr)
+```
+
+
+```{R Load the data}
+
+#load("driving.RData", ex <- new.env())
+#ls.str(ex) 
+load("driving.RData")
+head(data,5)
+
+df <- pdata.frame(data, index=c("state", 'year'))
+#head(df, 20)
+```
+
+
+```{R EDA 1}
+correlate(data)
+sum(is.na(data))
+summary(data)
+```
+
+```{R EDA 2}
+data1 <- subset(data, state == 1) 
+data2 <- subset(data, state == 2)
+data3 <- subset(data, state == 3)
+data4 <- subset(data, state == 4) 
+data5 <- subset(data, state == 5)
+data6 <- subset(data, state == 6) 
+data7 <- subset(data, state == 7) 
+data8 <- subset(data, state == 8)
+data9 <- subset(data, state == 9)
+data10 <- subset(data, state == 10) 
+data11 <- subset(data, state == 11)
+data12 <- subset(data, state == 12)
+
+#plot the first data series using plot()
+plot(data1$year, data1$totfatrte, type="o", col="blue", pch="o", ylab="y", lty=1, ylim=c(0,50), xlim=c(1979,2005))
+
+#add third data series to the same chart using points() and lines()
+points(data3$year, data3$totfatrte, col="dark red",pch="+")
+lines(data3$year, data3$totfatrte, col="dark red", lty=3)
+
+points(data4$year, data4$totfatrte, col="red", pch="*")
+lines(data4$year, data4$totfatrte, col="red",lty=2)
+
+points(data5$year, data5$totfatrte, col="purple", pch="-")
+lines(data5$year, data5$totfatrte, col="purple",lty=1)
+
+points(data6$year, data6$totfatrte, col="orange", pch="-")
+lines(data6$year, data6$totfatrte, col="orange",lty=4)
+
+points(data7$year, data7$totfatrte, col="pink", pch="-")
+lines(data7$year, data7$totfatrte, col="pink",lty=2)
+
+points(data8$year, data8$totfatrte, col="green", pch="-")
+lines(data8$year, data8$totfatrte, col="green",lty=4)
+
+points(data9$year, data9$totfatrte, col="dark blue", pch="-")
+lines(data9$year, data9$totfatrte, col="dark blue",lty=4)
+
+points(data10$year, data10$totfatrte, col="dark green", pch="~")
+lines(data10$year, data10$totfatrte, col="dark green",lty=4)
+
+points(data11$year, data11$totfatrte, col="hot pink", pch="#")
+lines(data11$year, data11$totfatrte, col="hot pink",lty=4)
+
+points(data12$year, data12$totfatrte, col="sea green", pch="+")
+lines(data12$year, data12$totfatrte, col="sea green",lty=4)
+```
+
+
+```{R EDA 3}
+par(mfrow=c(3,3))
+hist(data$totfatrte)
+hist(data$seatbelt)
+hist(data$minage)
+hist(data$gdl)
+hist(data$zerotol)
+hist(data$vehicmiles)
+hist(data$unem)
+hist(data$perc14_24)
+hist(data$vehicmilespc)
+```
+
+
+2. (15%) How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
+
+```{R Q2}
+boxplot(totfatrte ~ year, data=data)
+data_sub = data[, c('totfatrte', 'year')]
+for (year in unique(data_sub$year)) {
+  if (year == min(data_sub$year)) {
+    next
+  }
+  data_sub[paste('year_', year, sep='')] = (data_sub$year == year) * 1
+}
+data_sub$year = NULL
+mdl1 = lm('totfatrte ~ .', data=data_sub)
+summary(mdl1)
+year_avg = as.numeric(mdl1$coefficients)
+year_avg[2:length(year_avg)] = year_avg[2:length(year_avg)] + year_avg[1]
+plot(unique(data$year), year_avg, main='Total fatalities per 100,000 population through time', xlab='Year', ylab='fatality per 100,000 population')
+```
+
+**Response to Q2**
+
+The average fatalities per 100,000 people (totfatrte) for each year can be computed through the regression, where the fatalities are regressed on year dummy variables, and by skipping the first year since the intercept of the regression will represent the average for 1980, and all further coefficients will represent the adjustment to the intercept term to arrive at the average for that given year. Looking at the chart, we can see that the average fatalaties per 100,000 people have been trending down overall, with a big improvements in the early and late 1980's, as well as early 1990's, with only a minor improvement from then until 2004.
+
+
+3. (15%) Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
+
+
+```{R Q3}
+vars = c('bac08', 'bac10', 'perse', 'sbprim', 'sbsecon', 'sl70plus', 'gdl', 'perc14_24', 'unem', 'vehicmilespc')
+
+for (var in vars) {
+  data_sub[var] = data[var]
+  #hist(data_sub[var])
+}
+
+par(mfrow=c(3,3))
+hist(data_sub$bac08)
+hist(data_sub$bac10)
+hist(data_sub$perse)
+hist(data_sub$sbprim)
+hist(data_sub$sbsecon)
+hist(data_sub$sl70plus)
+hist(data_sub$gdl)
+hist(data_sub$perc14_24)
+hist(data_sub$unem)
+
+#hist(data_sub$vehicmilespc)
+
+
+data_sub$unem = log(data_sub$unem)
+for (i in 1:7) {
+  data_sub[vars[i]] = (data_sub[vars[i]] > 0.5) * 1
+}
+mdl2 = lm('totfatrte ~ .', data=data_sub)
+summary(mdl2)
+anova(mdl1, mdl2, test="Chisq")
+```
+
+**Response to Q3**
+
+Since bac08, bac10, perse, sbprim, sbsecon, s170plus and gdl, are 0-1 variables that represent the fraction of a year that a specific speed limit / blood alcohol level / law was in place for (for a given year), these are transformed into 0-1 hot encodings (0 = 0.50 or less, 1 if > 0.50) for better interpretability. Furthermore, the unem variable, which is the unemployment rate, is log transformed to take out the skew of its distribution as mentioned in the EDA. The remaining variables (perc14_14 and vehicmilespc) are not transformed since their distributions are not skewed.
+
+After running the regression with the added variables, we can see from the anova (chi-square) test that the added variables are adding significant explanitory power to the model. bac08 and bac10 variables represent the blood alcohol level limits that are prescribed by law, and these two variables can either be 0 for both if there are no limits, 1 for one and 0 for the other, or a fractions that can sum to 1 if one limit was used for part of one year and the other was used for the remaining. The coefficients for these two variables in the regression are -2.288 and -1.256, which implies that total fatalities per 100,000 people decreases by these amounts when these limits are in place. Interestingly and not surprisingly, going from no limit to 0.08 limit reduces the fatalities more than going for 0.08 to 0.1. Both coefficients are significant at the 0.01 confidence level.
+
+Looking at per se laws (perse), the coefficient is negative as expected, and specifically, the model estimates that by introducing this per se law, total fatalities per 100,000 people is reduced by -0.5625. This variable is somewhat significant at the 0.1 level. Moving to the primary seat belt law, there is also an estimated negative effect with total fatalities per 100,000 people of -0.3795, however, this variable does not seem significant, and interestingly, the sbsecon (secondary seal belt law), is not significant either and has an even lower magnititude in estimated effect on totfatrte.
+
+
+
+
+4. (15%) Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
+
+```{R Q4}
+#head(data)
+
+# Transform the data (as per inputs from Dominik)
+data$bac08bin = ifelse(data$bac08<=0.5,0,1)
+data$bac10bin = ifelse(data$bac10<=0.5,0,1)
+data$persebin = ifelse(data$perse<=0.5,0,1)
+data$sbprimbin = ifelse(data$sbprim<=0.5,0,1)
+data$sbseconbin = ifelse(data$sbsecon<=0.5,0,1)
+data$sl70plusbin = ifelse(data$sl70plus<=0.5,0,1)
+data$gdlbin = ifelse(data$gdl<0.5,0,1)
+data$unemlog = log(data$unem)
+
+#Fixed Effects Model
+model.fe = plm(totfatrte~bac08bin+bac10bin+persebin+sbprimbin+sbseconbin+sl70plusbin+gdlbin+
+                      perc14_24+unemlog+vehicmilespc + d81+d82+d83+d84+d85+d86+d87+d88+d89+
+                      d90+d91+d92+d93+d94+d95+d96+d97+d98+d99+d00+d01+d02+d03+d04, 
+               data=data, model=c("within"), index=c('state','year'), effect = "twoways")
+summary(model.fe)
+```
+
+***Response to Q4***
+
+***How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? ***
+
+> The coefficients for bac08, bac10, perse and sbprim are all statistically significant with the panel fixed-effects model.  The estimate for the bac08 coeff is slightly lower, the coeff for bac10 is about the same as before. The perse coeff has changed  from -2.06 to -1.12;  Also the coeff for sbprim is now statistically significant which was not the case earlier.
+
+***Which set of estimates do you think is more reliable? ***
+
+> 1. The FE model models the variation over time in $totfatrte$ and all the independent variables  *within* each state. So it is more reliable
+
+
+***What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?***
+
+> ***FE Assumption*** - The fixed effect assumption is that the individual-specific effects are correlated with the independent variables.
+
+> ***Pooled OLS assumption*** - The Key assumption of Pooled OLS is that there are unique, time constant attributes of individuals that are not correlated with the individual regressors. 
+
+> In the current context, it is very difficult to test assumption for Poole OLS model. In other words, FE model assumptions are more reasonable to proceed.
+
+
+5. (10%) Would you perfer to use a random effects model instead of the fixed effects model you built in *Exercise 4*? Please explain.
+
+```{R Q5}
+model.re = plm(totfatrte~bac08bin+bac10bin+persebin+sbprimbin+sbseconbin+sl70plusbin+gdlbin+
+                      perc14_24+unemlog+vehicmilespc + d81+d82+d83+d84+d85+d86+d87+d88+d89+
+                      d90+d91+d92+d93+d94+d95+d96+d97+d98+d99+d00+d01+d02+d03+d04, 
+               data=data, model=c("random"), index=c('state','year'))
+
+summary(model.re)
+```
+
+***Response to Q5***
+
+> 1. In a random effects model, the unobserved variables are assumed to be uncorrelated with (or, more strongly, statistically independent of) all the observed variables.
+
+> 2. In a fixed effects model, the unobserved variables are allowed to have any associations whatsoever with the observed variables.
+
+> 3. For the given data, assumption for fixed effect model seems to be more practical as it is very difficult to test/prove that unobserved variables are not correlated with observed variables if we use random effect modeling. On other hand, it is possible to remove omitted/unobserved variable bias using fixed effects modeling with dummy variables of each year to explain the unaccounted for time-variant error dependence.
+
+> 4. Hence, fixed effect model is prferred over random effect model.
+
+6. (10%) Suppose that *vehicmilespc*, the number of miles driven per capita, increases by $1,000$. Using the FE estimates, what is the estimated effect on *totfatrte*? Please interpret the estimate.
+
+***Response to Q6***
+
+> 1. From the FE model, the coefficient for the $vehicmilespc$ variable is 0.00094479
+
+> 2. $totfatrte$ is Fatalities/100K people per mile-driven/capita.  
+
+> 3. If $vehicmilespc$ increases by $1,000$, the value of $totfatrte$ increases as follows
+
+$$ Increase-In-totfatrte-value = 1000 * 0.00094479 =  0.94479 $$
+
+> 4. In summary, estimated effect on *totfatrte* *vehicmilespc*, if the number of miles driven per capita, increases by $1,000$, is an increase in it's value by $0.94479$ (provided all other things do not change)
+
+
+7. (5%) If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors?
+
+***Response for Q7***
+
+> 1. With, positive serial correlation, the OLS estimates of ths standard errors will be smaller than the true standard errors. This will lead to the conclusion that the parameter estimates are more precise than they really are. There will be a tendency to reject the null hypothesis when it should not be rejected. In other words, we will consider insignificant variables as significant.
+
+> 2. On the contrary, with the presence of heteroskedasticity in our error, we will fail to reject null hypothesis when it should be rejected. In other words, we will not be in a position to detect the significance of potentially valuable regressor.
+
+
+
+
+
+
+
+
+
+
+
+
+
